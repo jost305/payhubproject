@@ -384,6 +384,225 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Folder routes
+  app.get("/api/folders", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user || user.role !== "freelancer") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const folders = await storage.getFoldersByFreelancer(user.id);
+      res.json({ folders });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/folders", requireRole(["freelancer"]), async (req, res) => {
+    try {
+      const folderData = {
+        ...req.body,
+        freelancerId: req.user.id,
+      };
+
+      const folder = await storage.createFolder(folderData);
+      res.json({ folder });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/folders/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const folder = await storage.updateFolder(id, req.body);
+      res.json({ folder });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/folders/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteFolder(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Analytics routes
+  app.get("/api/analytics/overview", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user || user.role !== "freelancer") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const analytics = await storage.getAnalyticsByFreelancer(user.id);
+      
+      // Calculate overview metrics
+      const totalViews = analytics.filter(a => a.event === 'view').length;
+      const totalComments = analytics.filter(a => a.event === 'comment').length;
+      const thisMonth = new Date();
+      thisMonth.setDate(1);
+      const thisMonthViews = analytics.filter(a => 
+        a.event === 'view' && new Date(a.createdAt) >= thisMonth
+      ).length;
+      
+      // Calculate engagement and conversion rates
+      const uniqueViews = new Set(analytics.filter(a => a.event === 'view').map(a => a.clientEmail)).size;
+      const approvals = analytics.filter(a => a.event === 'approval').length;
+      const avgEngagement = uniqueViews > 0 ? Math.round((totalComments / uniqueViews) * 100) : 0;
+      const conversionRate = uniqueViews > 0 ? Math.round((approvals / uniqueViews) * 100) : 0;
+
+      res.json({
+        totalViews,
+        totalComments,
+        thisMonthViews,
+        avgEngagement,
+        conversionRate,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/projects/:id/analytics", requireAuth, async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const analytics = await storage.getAnalyticsByProject(projectId);
+      res.json({ analytics });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/analytics", async (req, res) => {
+    try {
+      const analytics = await storage.createAnalytics(req.body);
+      res.json({ analytics });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Message routes
+  app.get("/api/messages", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      const messages = await storage.getMessagesByUser(user.email);
+      res.json({ messages });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/projects/:id/messages", async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const messages = await storage.getMessagesByProject(projectId);
+      res.json({ messages });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/projects/:id/messages", async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const messageData = {
+        ...req.body,
+        projectId,
+      };
+
+      const message = await storage.createMessage(messageData);
+      res.json({ message });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/messages/:id/read", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const message = await storage.markMessageAsRead(id);
+      res.json({ message });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // File version routes
+  app.get("/api/projects/:id/files", async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const files = await storage.getLatestFileVersions(projectId);
+      res.json({ files });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/projects/:id/file-versions", async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const versions = await storage.getFileVersionsByProject(projectId);
+      res.json({ versions });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/projects/:id/files", requireAuth, async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const fileData = {
+        ...req.body,
+        projectId,
+        uploadedBy: req.session.userId!.toString(),
+      };
+
+      const file = await storage.createFileVersion(fileData);
+      res.json({ file });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Enhanced file upload endpoint
+  app.post("/api/upload-file", requireAuth, async (req, res) => {
+    try {
+      // In a real implementation, this would handle file upload to cloud storage
+      const { projectId, isPreview, version, changeDescription } = req.body;
+      
+      // Simulate file upload
+      const fileUrl = `https://example.com/files/${projectId}/${Date.now()}.file`;
+      
+      // Create file version record
+      const fileVersion = await storage.createFileVersion({
+        projectId: parseInt(projectId),
+        fileName: 'uploaded-file.ext', // Would get from actual file
+        fileUrl,
+        fileSize: 1024, // Would get from actual file
+        version: parseInt(version) || 1,
+        isPreview: isPreview === 'true',
+        uploadedBy: req.session.userId!.toString(),
+        changeDescription: changeDescription || null,
+      });
+      
+      res.json({ fileUrl, fileVersion });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Subdomain route
   app.get("/api/freelancer/:subdomain", async (req, res) => {
     try {

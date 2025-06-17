@@ -8,29 +8,29 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User>;
   getUserBySubdomain(subdomain: string): Promise<User | undefined>;
-  
+
   // Project methods
   getProject(id: number): Promise<Project | undefined>;
   getProjectsByFreelancer(freelancerId: number): Promise<Project[]>;
   getProjectByIdAndClient(id: number, clientEmail: string): Promise<Project | undefined>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, updates: Partial<Project>): Promise<Project>;
-  
+
   // Comment methods
   getCommentsByProject(projectId: number): Promise<Comment[]>;
   createComment(comment: InsertComment): Promise<Comment>;
-  
+
   // Payment methods
   getPayment(id: number): Promise<Payment | undefined>;
   getPaymentByProject(projectId: number): Promise<Payment | undefined>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePayment(id: number, updates: Partial<Payment>): Promise<Payment>;
-  
+
   // Download methods
   getDownloadByToken(token: string): Promise<Download | undefined>;
   createDownload(download: InsertDownload): Promise<Download>;
   updateDownload(id: number, updates: Partial<Download>): Promise<Download>;
-  
+
   // Admin methods
   getAllUsers(): Promise<User[]>;
   getAllProjects(): Promise<Project[]>;
@@ -207,6 +207,108 @@ export class MemStorage implements IStorage {
     const updatedDownload = { ...download, ...updates };
     this.downloads.set(id, updatedDownload);
     return updatedDownload;
+  }
+
+  // Project Folders
+  private folders = new Map<number, ProjectFolder>();
+  private nextFolderId = 1;
+
+  async createFolder(data: InsertProjectFolder): Promise<ProjectFolder> {
+    const folder = { id: this.nextFolderId++, ...data, createdAt: new Date() };
+    this.folders.set(folder.id, folder);
+    return folder;
+  }
+
+  async getFoldersByFreelancer(freelancerId: number): Promise<ProjectFolder[]> {
+    return Array.from(this.folders.values()).filter(folder => folder.freelancerId === freelancerId);
+  }
+
+  async updateFolder(id: number, updates: Partial<ProjectFolder>): Promise<ProjectFolder> {
+    const folder = this.folders.get(id);
+    if (!folder) throw new Error("Folder not found");
+    const updatedFolder = { ...folder, ...updates };
+    this.folders.set(id, updatedFolder);
+    return updatedFolder;
+  }
+
+  async deleteFolder(id: number): Promise<void> {
+    this.folders.delete(id);
+  }
+
+  // Analytics
+  private analytics = new Map<number, ProjectAnalytics>();
+  private nextAnalyticsId = 1;
+
+  async createAnalytics(data: InsertProjectAnalytics): Promise<ProjectAnalytics> {
+    const analytics = { id: this.nextAnalyticsId++, ...data, createdAt: new Date() };
+    this.analytics.set(analytics.id, analytics);
+    return analytics;
+  }
+
+  async getAnalyticsByProject(projectId: number): Promise<ProjectAnalytics[]> {
+    return Array.from(this.analytics.values()).filter(a => a.projectId === projectId);
+  }
+
+  async getAnalyticsByFreelancer(freelancerId: number): Promise<ProjectAnalytics[]> {
+    const projects = this.getProjectsByFreelancer(freelancerId);
+    const projectIds = (await projects).map(p => p.id);
+    return Array.from(this.analytics.values()).filter(a => projectIds.includes(a.projectId));
+  }
+
+  // Messages
+  private messages = new Map<number, ProjectMessage>();
+  private nextMessageId = 1;
+
+  async createMessage(data: InsertProjectMessage): Promise<ProjectMessage> {
+    const message = { id: this.nextMessageId++, ...data, createdAt: new Date() };
+    this.messages.set(message.id, message);
+    return message;
+  }
+
+  async getMessagesByProject(projectId: number): Promise<ProjectMessage[]> {
+    return Array.from(this.messages.values()).filter(m => m.projectId === projectId);
+  }
+
+  async getMessagesByUser(email: string): Promise<ProjectMessage[]> {
+    return Array.from(this.messages.values()).filter(m => 
+      m.senderEmail === email || m.recipientEmail === email
+    );
+  }
+
+  async markMessageAsRead(id: number): Promise<ProjectMessage> {
+    const message = this.messages.get(id);
+    if (!message) throw new Error("Message not found");
+    const updatedMessage = { ...message, isRead: true };
+    this.messages.set(id, updatedMessage);
+    return updatedMessage;
+  }
+
+  // File Versions
+  private fileVersions = new Map<number, FileVersion>();
+  private nextFileVersionId = 1;
+
+  async createFileVersion(data: InsertFileVersion): Promise<FileVersion> {
+    const fileVersion = { id: this.nextFileVersionId++, ...data, createdAt: new Date() };
+    this.fileVersions.set(fileVersion.id, fileVersion);
+    return fileVersion;
+  }
+
+  async getFileVersionsByProject(projectId: number): Promise<FileVersion[]> {
+    return Array.from(this.fileVersions.values()).filter(fv => fv.projectId === projectId);
+  }
+
+  async getLatestFileVersions(projectId: number): Promise<FileVersion[]> {
+    const versions = this.getFileVersionsByProject(projectId);
+    const latestVersions = new Map<string, FileVersion>();
+
+    (await versions).forEach(version => {
+      const existing = latestVersions.get(version.fileName);
+      if (!existing || version.version > existing.version) {
+        latestVersions.set(version.fileName, version);
+      }
+    });
+
+    return Array.from(latestVersions.values());
   }
 
   async getAllUsers(): Promise<User[]> {

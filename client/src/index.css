@@ -59,6 +59,14 @@
   }
 }
 
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #f9fafb;
+  color: #111827;
+}
+
 /* Custom gradient for PayVidi branding */
 .gradient-primary {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
