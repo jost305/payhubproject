@@ -537,7 +537,7 @@ export default function FreelancerDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  {isLoading ? (
+                  {projectsLoading ? (
                     <div className="text-center py-12 text-gray-500">Loading projects...</div>
                   ) : filteredProjects.length === 0 ? (
                     <div className="text-center py-12">
@@ -743,7 +743,7 @@ export default function FreelancerDashboard() {
                           const project = projects?.projects?.find((p: Project) => p.id === parseInt(value));
                           setSelectedProject(project || null);
                         }}>
-                          <SelectTrigger className="bg-white border-gray-300">
+<SelectTrigger className="bg-white border-gray-300">
                             <SelectValue placeholder="Choose a project to upload files to" />
                           </SelectTrigger>
                           <SelectContent>
