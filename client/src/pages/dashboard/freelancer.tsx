@@ -696,7 +696,7 @@ export default function FreelancerDashboard() {
                 ))}
               </div>
 
-              {filteredProjects.length === 0 && !isLoading && (
+              {filteredProjects.length === 0 && !projectsLoading && (
                 <div className="text-center py-12">
                   <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No projects found</h3>
