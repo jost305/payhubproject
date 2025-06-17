@@ -365,6 +365,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User update route
+  app.patch("/api/users/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(req.session.userId);
+      
+      if (!user || (user.role !== "admin" && user.id !== id)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const updatedUser = await storage.updateUser(id, req.body);
+      res.json({ user: { ...updatedUser, password: undefined } });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/users", requireRole(["admin"]), async (req, res) => {
     try {

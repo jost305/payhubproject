@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
@@ -37,10 +39,24 @@ import {
   Folder,
   Search,
   Filter,
-  MoreHorizontal
+  MoreHorizontal,
+  Globe,
+  Save,
+  Image,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Download,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
+  Link as LinkIcon,
+  Copy,
+  ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, ProjectFolder } from "@shared/schema";
+import { FileUploadAdvanced } from "@/components/project/file-upload-advanced";
 
 export default function FreelancerDashboard() {
   const { user, logout } = useAuth();
@@ -51,6 +67,8 @@ export default function FreelancerDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedFolder, setSelectedFolder] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   
   const [newProject, setNewProject] = useState({
     title: "",
@@ -66,6 +84,28 @@ export default function FreelancerDashboard() {
   const [newFolder, setNewFolder] = useState({
     name: "",
     color: "#3B82F6",
+  });
+
+  const [brandingSettings, setBrandingSettings] = useState({
+    logoUrl: user?.logoUrl || "",
+    bannerUrl: user?.bannerUrl || "",
+    coverImageUrl: user?.coverImageUrl || "",
+    brandColor: user?.brandColor || "#4F46E5",
+    customThankYouMessage: user?.customThankYouMessage || "",
+    redirectAfterPayment: user?.redirectAfterPayment || "",
+    redirectAfterApproval: user?.redirectAfterApproval || "",
+  });
+
+  const [accountSettings, setAccountSettings] = useState({
+    username: user?.username || "",
+    email: user?.email || "",
+    subdomain: user?.subdomain || "",
+    notifications: {
+      emailComments: true,
+      emailApprovals: true,
+      emailPayments: true,
+      pushNotifications: true,
+    },
   });
 
   const { data: projects, isLoading } = useQuery({
@@ -125,6 +165,20 @@ export default function FreelancerDashboard() {
     },
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      const response = await apiRequest('PATCH', `/api/users/${user?.id}`, userData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      toast({
+        title: "Success",
+        description: "Settings updated successfully",
+      });
+    },
+  });
+
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     createProjectMutation.mutate(newProject);
@@ -133,6 +187,14 @@ export default function FreelancerDashboard() {
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     createFolderMutation.mutate(newFolder);
+  };
+
+  const handleSaveBranding = async () => {
+    updateUserMutation.mutate(brandingSettings);
+  };
+
+  const handleSaveSettings = async () => {
+    updateUserMutation.mutate(accountSettings);
   };
 
   const handleLogout = async () => {
@@ -151,6 +213,14 @@ export default function FreelancerDashboard() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: "Link copied to clipboard",
+    });
+  };
+
   const stats = {
     totalProjects: projects?.projects?.length || 0,
     approvedProjects: projects?.projects?.filter((p: Project) => p.status === 'approved').length || 0,
@@ -165,6 +235,7 @@ export default function FreelancerDashboard() {
   const navigationItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'projects', label: 'Projects', icon: FileText },
+    { id: 'upload', label: 'Upload Files', icon: Upload },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'messages', label: 'Messages', icon: MessageSquare, badge: stats.unreadMessages },
     { id: 'branding', label: 'Branding', icon: Palette },
@@ -641,6 +712,17 @@ export default function FreelancerDashboard() {
                               View
                             </Link>
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedProject(project);
+                              setUploadDialogOpen(true);
+                            }}
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                          >
+                            <Upload className="h-4 w-4" />
+                          </Button>
                           {project.status !== 'draft' && (
                             <Button asChild variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
                               <Link href={`/preview/${project.id}`}>
@@ -673,6 +755,67 @@ export default function FreelancerDashboard() {
                   )}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="upload" className="space-y-6">
+              <Card className="bg-white border-gray-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-gray-900">Upload Project Files</CardTitle>
+                  <CardDescription className="text-gray-500">
+                    Select a project and upload preview or final files
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {projects?.projects?.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Upload className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No projects available</h3>
+                      <p className="text-gray-500 mb-6">Create a project first to upload files</p>
+                      <Button onClick={() => setIsCreating(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Project
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label className="text-gray-900">Select Project</Label>
+                        <Select value={selectedProject?.id.toString() || ""} onValueChange={(value) => {
+                          const project = projects?.projects?.find((p: Project) => p.id === parseInt(value));
+                          setSelectedProject(project || null);
+                        }}>
+                          <SelectTrigger className="bg-white border-gray-300">
+                            <SelectValue placeholder="Choose a project to upload files to" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {projects?.projects?.map((project: Project) => (
+                              <SelectItem key={project.id} value={project.id.toString()}>
+                                {project.title} - {project.clientName || project.clientEmail}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {selectedProject && (
+                        <div className="border border-gray-200 rounded-lg p-6">
+                          <h3 className="font-semibold text-gray-900 mb-4">Upload to: {selectedProject.title}</h3>
+                          <FileUploadAdvanced 
+                            projectId={selectedProject.id}
+                            onUploadComplete={() => {
+                              queryClient.invalidateQueries({ queryKey: [`/api/projects/${selectedProject.id}/files`] });
+                              toast({
+                                title: "Success",
+                                description: "Files uploaded successfully",
+                              });
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
@@ -737,12 +880,42 @@ export default function FreelancerDashboard() {
               <Card className="bg-white border-gray-200 shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-gray-900">Project Performance</CardTitle>
-                  <CardDescription className="text-gray-500">Track how your projects are performing</CardDescription>
+                  <CardDescription className="text-gray-500">Detailed analytics for each project</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12 text-gray-500">
-                    <BarChart3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p>Analytics dashboard coming soon</p>
+                  <div className="space-y-4">
+                    {filteredProjects.map((project: Project) => (
+                      <div key={project.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <FileText className="h-6 w-6 text-indigo-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{project.title}</h4>
+                            <p className="text-sm text-gray-500">{project.clientName || project.clientEmail}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-6 text-sm">
+                          <div className="text-center">
+                            <p className="font-semibold text-gray-900">0</p>
+                            <p className="text-gray-500">Views</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="font-semibold text-gray-900">0</p>
+                            <p className="text-gray-500">Comments</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="font-semibold text-gray-900">0%</p>
+                            <p className="text-gray-500">Engagement</p>
+                          </div>
+                          <Button asChild variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                            <Link href={`/project/${project.id}`}>
+                              View Details
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -751,14 +924,40 @@ export default function FreelancerDashboard() {
             <TabsContent value="messages" className="space-y-6">
               <Card className="bg-white border-gray-200 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-gray-900">Recent Messages</CardTitle>
+                  <CardTitle className="text-gray-900">Client Messages</CardTitle>
                   <CardDescription className="text-gray-500">Communication with your clients</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12 text-gray-500">
-                    <MessageSquare className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p>No messages yet</p>
-                  </div>
+                  {messages?.messages?.length === 0 ? (
+                    <div className="text-center py-12">
+                      <MessageSquare className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No messages yet</h3>
+                      <p className="text-gray-500">Client messages will appear here when they contact you</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages?.messages?.map((message: any, index: number) => (
+                        <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
+                          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <MessageSquare className="h-5 w-5 text-indigo-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-gray-900">{message.senderName || message.senderEmail}</h4>
+                              <span className="text-sm text-gray-500">{new Date(message.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-gray-700">{message.message}</p>
+                            <div className="flex items-center space-x-2 mt-3">
+                              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">Reply</Button>
+                              {!message.isRead && (
+                                <Badge className="bg-red-100 text-red-700">New</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -767,34 +966,365 @@ export default function FreelancerDashboard() {
               <Card className="bg-white border-gray-200 shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-gray-900">Brand Customization</CardTitle>
-                  <CardDescription className="text-gray-500">Customize your client-facing experience</CardDescription>
+                  <CardDescription className="text-gray-500">
+                    Customize your client-facing experience with your brand
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12 text-gray-500">
-                    <Palette className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p>Branding customization coming soon</p>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="logoUrl" className="text-gray-900">Logo URL</Label>
+                        <Input
+                          id="logoUrl"
+                          value={brandingSettings.logoUrl}
+                          onChange={(e) => setBrandingSettings({ ...brandingSettings, logoUrl: e.target.value })}
+                          placeholder="https://example.com/logo.png"
+                          className="bg-white border-gray-300"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="bannerUrl" className="text-gray-900">Banner URL</Label>
+                        <Input
+                          id="bannerUrl"
+                          value={brandingSettings.bannerUrl}
+                          onChange={(e) => setBrandingSettings({ ...brandingSettings, bannerUrl: e.target.value })}
+                          placeholder="https://example.com/banner.jpg"
+                          className="bg-white border-gray-300"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="coverImageUrl" className="text-gray-900">Cover Image URL</Label>
+                        <Input
+                          id="coverImageUrl"
+                          value={brandingSettings.coverImageUrl}
+                          onChange={(e) => setBrandingSettings({ ...brandingSettings, coverImageUrl: e.target.value })}
+                          placeholder="https://example.com/cover.jpg"
+                          className="bg-white border-gray-300"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="brandColor" className="text-gray-900">Brand Color</Label>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            id="brandColor"
+                            type="color"
+                            value={brandingSettings.brandColor}
+                            onChange={(e) => setBrandingSettings({ ...brandingSettings, brandColor: e.target.value })}
+                            className="w-16 h-12 bg-white border-gray-300"
+                          />
+                          <Input
+                            value={brandingSettings.brandColor}
+                            onChange={(e) => setBrandingSettings({ ...brandingSettings, brandColor: e.target.value })}
+                            className="flex-1 bg-white border-gray-300"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="customThankYouMessage" className="text-gray-900">Custom Thank You Message</Label>
+                        <Textarea
+                          id="customThankYouMessage"
+                          value={brandingSettings.customThankYouMessage}
+                          onChange={(e) => setBrandingSettings({ ...brandingSettings, customThankYouMessage: e.target.value })}
+                          placeholder="Thank you for choosing our services..."
+                          className="bg-white border-gray-300"
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="redirectAfterPayment" className="text-gray-900">Redirect After Payment</Label>
+                        <Input
+                          id="redirectAfterPayment"
+                          value={brandingSettings.redirectAfterPayment}
+                          onChange={(e) => setBrandingSettings({ ...brandingSettings, redirectAfterPayment: e.target.value })}
+                          placeholder="https://yourwebsite.com/thank-you"
+                          className="bg-white border-gray-300"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="redirectAfterApproval" className="text-gray-900">Redirect After Approval</Label>
+                        <Input
+                          id="redirectAfterApproval"
+                          value={brandingSettings.redirectAfterApproval}
+                          onChange={(e) => setBrandingSettings({ ...brandingSettings, redirectAfterApproval: e.target.value })}
+                          placeholder="https://yourwebsite.com/approved"
+                          className="bg-white border-gray-300"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Preview Mode</h3>
+                      <p className="text-sm text-gray-500">See how your branding will look to clients</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                        <Monitor className="h-4 w-4 mr-2" />
+                        Desktop
+                      </Button>
+                      <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                        <Tablet className="h-4 w-4 mr-2" />
+                        Tablet
+                      </Button>
+                      <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                        <Smartphone className="h-4 w-4 mr-2" />
+                        Mobile
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                    <Button onClick={handleSaveBranding} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Branding
+                    </Button>
+                    <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                      Reset to Default
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">
-              <Card className="bg-white border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-gray-900">Account Settings</CardTitle>
-                  <CardDescription className="text-gray-500">Manage your account preferences</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12 text-gray-500">
-                    <Settings className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p>Settings panel coming soon</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-white border-gray-200 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-gray-900">Account Settings</CardTitle>
+                    <CardDescription className="text-gray-500">
+                      Manage your account information and preferences
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username" className="text-gray-900">Username</Label>
+                      <Input
+                        id="username"
+                        value={accountSettings.username}
+                        onChange={(e) => setAccountSettings({ ...accountSettings, username: e.target.value })}
+                        className="bg-white border-gray-300"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-gray-900">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={accountSettings.email}
+                        onChange={(e) => setAccountSettings({ ...accountSettings, email: e.target.value })}
+                        className="bg-white border-gray-300"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="subdomain" className="text-gray-900">Custom Subdomain</Label>
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          id="subdomain"
+                          value={accountSettings.subdomain}
+                          onChange={(e) => setAccountSettings({ ...accountSettings, subdomain: e.target.value })}
+                          className="bg-white border-gray-300"
+                          placeholder="yourname"
+                        />
+                        <span className="text-gray-500 text-sm">.payvidi.com</span>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Your portfolio will be available at: {accountSettings.subdomain || 'yourname'}.payvidi.com
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-gray-900">Portfolio Settings</h4>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">Public Portfolio</p>
+                          <p className="text-sm text-gray-500">Make your work visible to everyone</p>
+                        </div>
+                        <Switch />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">Show Pricing</p>
+                          <p className="text-sm text-gray-500">Display project prices on your portfolio</p>
+                        </div>
+                        <Switch />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">Allow Contact Form</p>
+                          <p className="text-sm text-gray-500">Let visitors contact you directly</p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                    </div>
+
+                    <Button onClick={handleSaveSettings} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Settings
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border-gray-200 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-gray-900">Notification Settings</CardTitle>
+                    <CardDescription className="text-gray-500">
+                      Choose how you want to be notified
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">Email Notifications</p>
+                          <p className="text-sm text-gray-500">Get notified about new comments</p>
+                        </div>
+                        <Switch 
+                          checked={accountSettings.notifications.emailComments}
+                          onCheckedChange={(checked) => 
+                            setAccountSettings({
+                              ...accountSettings,
+                              notifications: { ...accountSettings.notifications, emailComments: checked }
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">Project Approvals</p>
+                          <p className="text-sm text-gray-500">Get notified when projects are approved</p>
+                        </div>
+                        <Switch 
+                          checked={accountSettings.notifications.emailApprovals}
+                          onCheckedChange={(checked) => 
+                            setAccountSettings({
+                              ...accountSettings,
+                              notifications: { ...accountSettings.notifications, emailApprovals: checked }
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">Payment Notifications</p>
+                          <p className="text-sm text-gray-500">Get notified about payments</p>
+                        </div>
+                        <Switch 
+                          checked={accountSettings.notifications.emailPayments}
+                          onCheckedChange={(checked) => 
+                            setAccountSettings({
+                              ...accountSettings,
+                              notifications: { ...accountSettings.notifications, emailPayments: checked }
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">Push Notifications</p>
+                          <p className="text-sm text-gray-500">Browser notifications</p>
+                        </div>
+                        <Switch 
+                          checked={accountSettings.notifications.pushNotifications}
+                          onCheckedChange={(checked) => 
+                            setAccountSettings({
+                              ...accountSettings,
+                              notifications: { ...accountSettings.notifications, pushNotifications: checked }
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-gray-900">Quick Links</h4>
+                      
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <Globe className="h-5 w-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">Your Portfolio</p>
+                            <p className="text-sm text-gray-500">{accountSettings.subdomain || 'yourname'}.payvidi.com</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => copyToClipboard(`https://${accountSettings.subdomain || 'yourname'}.payvidi.com`)}
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            asChild
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                          >
+                            <a href={`https://${accountSettings.subdomain || 'yourname'}.payvidi.com`} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
       </div>
+
+      {/* Upload Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="bg-white border border-gray-200 max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">
+              Upload Files - {selectedProject?.title}
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Upload preview and final files for this project
+            </DialogDescription>
+          </DialogHeader>
+          {selectedProject && (
+            <FileUploadAdvanced 
+              projectId={selectedProject.id}
+              onUploadComplete={() => {
+                queryClient.invalidateQueries({ queryKey: [`/api/projects/${selectedProject.id}/files`] });
+                toast({
+                  title: "Success",
+                  description: "Files uploaded successfully",
+                });
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
