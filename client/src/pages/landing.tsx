@@ -18,38 +18,41 @@ import {
   FileVideo,
   FileImage,
   FileText,
-  Download
+  Download,
+  Zap,
+  Clock,
+  Award
 } from "lucide-react";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 payvidi-gradient rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
                   <Play className="text-white w-4 h-4" />
                 </div>
                 <span className="text-xl font-bold text-slate-900">PayVidi</span>
               </div>
               <div className="hidden md:flex space-x-6">
-                <a href="#features" className="text-slate-600 hover:text-primary transition-colors">Features</a>
-                <a href="#pricing" className="text-slate-600 hover:text-primary transition-colors">Pricing</a>
-                <a href="#about" className="text-slate-600 hover:text-primary transition-colors">About</a>
+                <a href="#features" className="text-slate-600 hover:text-indigo-600 transition-colors">Features</a>
+                <a href="#how-it-works" className="text-slate-600 hover:text-indigo-600 transition-colors">How it works</a>
+                <a href="#pricing" className="text-slate-600 hover:text-indigo-600 transition-colors">Pricing</a>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/login">
-                <Button variant="ghost" className="text-slate-600 hover:text-primary">
+                <Button variant="ghost" className="text-slate-600 hover:text-indigo-600">
                   Sign In
                 </Button>
               </Link>
               <Link href="/register">
-                <Button className="payvidi-gradient text-white">
-                  Get Started
+                <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700">
+                  Get Started Free
                 </Button>
               </Link>
             </div>
@@ -58,78 +61,93 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <section className="py-20">
+      <section className="pt-20 pb-16 bg-gradient-to-br from-slate-50 via-white to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-6">
-              Secure file sharing for <span className="text-primary">creators</span>
+            <Badge className="mb-6 bg-indigo-100 text-indigo-700 border-indigo-200">
+              Trusted by 10,000+ creators worldwide
+            </Badge>
+            <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-tight">
+              Share work.<br />
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Get paid.</span><br />
+              Stay secure.
             </h1>
-            <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
-              Let clients preview your work, provide feedback, and pay securely before receiving final files. 
-              Professional file sharing made simple.
+            <p className="text-xl text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed">
+              The modern platform for creators to share previews, collect feedback, and process payments 
+              before delivering final files. Professional client management made effortless.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link href="/register">
-                <Button size="lg" className="payvidi-gradient text-white">
+                <Button size="lg" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 px-8 py-4 text-lg">
                   Start Free Trial
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" className="px-8 py-4 text-lg border-slate-300">
+                <Play className="mr-2 w-5 h-5" />
                 Watch Demo
               </Button>
             </div>
+            <p className="text-sm text-slate-500 mt-4">No credit card required • 14-day free trial</p>
           </div>
           
-          {/* Hero Mockup */}
-          <div className="mt-16 relative">
-            <Card className="bg-white shadow-2xl border border-slate-200 overflow-hidden">
-              <div className="bg-slate-900 px-4 py-3 flex items-center space-x-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <div className="ml-4 text-slate-400 text-sm">designer.payvidi.com</div>
+          {/* Hero Visual */}
+          <div className="mt-20 relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 blur-3xl"></div>
+            <Card className="relative bg-white/80 backdrop-blur-sm shadow-2xl border border-slate-200/50 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center space-x-3">
+                <div className="flex space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                </div>
+                <div className="ml-4 text-slate-300 text-sm font-mono">designer.payvidi.com</div>
               </div>
               <CardContent className="p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2">
-                    <div className="bg-slate-100 rounded-xl aspect-video flex items-center justify-center">
-                      <Play className="text-primary w-16 h-16" />
+                    <div className="bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl aspect-video flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 to-purple-600/10"></div>
+                      <Play className="text-indigo-600 w-20 h-20 relative z-10" />
                     </div>
-                    <div className="mt-4 bg-slate-50 rounded-lg p-4">
+                    <div className="mt-6 bg-gradient-to-r from-slate-50 to-indigo-50 rounded-xl p-6">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-600">00:00</span>
-                        <div className="flex-1 mx-4 bg-slate-200 rounded-full h-2 relative">
-                          <div className="bg-primary w-1/3 h-2 rounded-full"></div>
-                          <div className="absolute top-0 left-1/4 w-3 h-3 bg-yellow-500 rounded-full comment-marker"></div>
-                          <div className="absolute top-0 left-1/2 w-3 h-3 bg-blue-500 rounded-full comment-marker"></div>
+                        <span className="text-sm text-slate-600 font-medium">00:00</span>
+                        <div className="flex-1 mx-6 bg-slate-200 rounded-full h-3 relative">
+                          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 w-1/3 h-3 rounded-full"></div>
+                          <div className="absolute top-0 left-1/4 w-4 h-4 bg-orange-500 rounded-full -mt-0.5 border-2 border-white shadow-sm"></div>
+                          <div className="absolute top-0 left-1/2 w-4 h-4 bg-blue-500 rounded-full -mt-0.5 border-2 border-white shadow-sm"></div>
                         </div>
-                        <span className="text-sm text-slate-600">02:34</span>
+                        <span className="text-sm text-slate-600 font-medium">03:24</span>
                       </div>
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <Card className="bg-slate-50">
+                    <Card className="bg-white border border-slate-200/50 shadow-sm">
                       <CardContent className="p-4">
                         <div className="flex items-start space-x-3">
-                          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                          <div className="w-9 h-9 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-sm font-semibold">JD</span>
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm text-slate-600">Love the intro! Can we make the logo bigger at 0:15?</p>
-                            <span className="text-xs text-slate-400">2 hours ago</span>
+                            <p className="text-sm text-slate-700 font-medium">Love the intro! Can we make the logo bigger at 0:15?</p>
+                            <span className="text-xs text-slate-500 mt-1">2 hours ago • Timeline comment</span>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                    <Card className="bg-slate-50">
+                    <Card className="bg-white border border-slate-200/50 shadow-sm">
                       <CardContent className="p-4">
                         <div className="flex items-start space-x-3">
-                          <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                          <div className="w-9 h-9 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-sm font-semibold">SM</span>
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm text-slate-600">Perfect! Ready to approve.</p>
-                            <span className="text-xs text-slate-400">1 hour ago</span>
+                            <p className="text-sm text-slate-700 font-medium">Perfect! Ready to approve and pay.</p>
+                            <div className="flex items-center mt-2">
+                              <Check className="w-4 h-4 text-emerald-500 mr-1" />
+                              <span className="text-xs text-emerald-600 font-medium">Approved</span>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -143,93 +161,266 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
+      <section id="features" className="py-24 bg-gradient-to-b from-white to-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Everything you need to share files securely
+          <div className="text-center mb-20">
+            <Badge className="mb-6 bg-purple-100 text-purple-700 border-purple-200">
+              Core Features
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
+              Everything you need to share files
+              <span className="block bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">professionally</span>
             </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              From preview sharing to payment processing, PayVidi handles the entire client workflow.
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+              From preview sharing to payment processing, PayVidi handles the entire client workflow 
+              with enterprise-grade security and modern design.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="bg-slate-50 hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
-                  <Eye className="text-white w-6 h-6" />
+            <Card className="group bg-white border border-slate-200/50 hover:border-indigo-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Eye className="text-white w-7 h-7" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">Preview Sharing</h3>
-                <p className="text-slate-600">Share watermarked previews with clients. They can comment and approve before payment.</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">Preview Sharing</h3>
+                <p className="text-slate-600 leading-relaxed">Share watermarked previews with clients. They can comment and approve before payment, ensuring satisfaction.</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-50 hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center mb-4">
-                  <MessageSquare className="text-white w-6 h-6" />
+            <Card className="group bg-white border border-slate-200/50 hover:border-indigo-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="w-14 h-14 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <MessageSquare className="text-white w-7 h-7" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">Timeline Comments</h3>
-                <p className="text-slate-600">Clients can leave feedback at specific timestamps in videos or sections in documents.</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">Timeline Comments</h3>
+                <p className="text-slate-600 leading-relaxed">Clients can leave feedback at specific timestamps in videos or sections in documents with precision.</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-50 hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 payvidi-accent-gradient rounded-lg flex items-center justify-center mb-4">
-                  <CreditCard className="text-white w-6 h-6" />
+            <Card className="group bg-white border border-slate-200/50 hover:border-indigo-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <CreditCard className="text-white w-7 h-7" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">Secure Payments</h3>
-                <p className="text-slate-600">Integrated payment processing with automatic commission calculation and payouts.</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">Secure Payments</h3>
+                <p className="text-slate-600 leading-relaxed">Integrated payment processing with automatic commission calculation and instant payouts.</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-50 hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mb-4">
-                  <Globe className="text-white w-6 h-6" />
+            <Card className="group bg-white border border-slate-200/50 hover:border-indigo-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="w-14 h-14 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Globe className="text-white w-7 h-7" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">Custom Subdomains</h3>
-                <p className="text-slate-600">Professional branded URLs like yourname.payvidi.com for your clients.</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">Custom Subdomains</h3>
+                <p className="text-slate-600 leading-relaxed">Professional branded URLs like yourname.payvidi.com for seamless client experience.</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-50 hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center mb-4">
-                  <Shield className="text-white w-6 h-6" />
+            <Card className="group bg-white border border-slate-200/50 hover:border-indigo-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="w-14 h-14 bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Shield className="text-white w-7 h-7" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">Secure Delivery</h3>
-                <p className="text-slate-600">Time-limited, IP-restricted download links sent via email after payment confirmation.</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">Secure Delivery</h3>
+                <p className="text-slate-600 leading-relaxed">Time-limited, IP-restricted download links sent via email after payment confirmation.</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-50 hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center mb-4">
-                  <TrendingUp className="text-white w-6 h-6" />
+            <Card className="group bg-white border border-slate-200/50 hover:border-indigo-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="w-14 h-14 bg-gradient-to-r from-teal-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <TrendingUp className="text-white w-7 h-7" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">Analytics Dashboard</h3>
-                <p className="text-slate-600">Track preview views, client interactions, and payment status in real-time.</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">Analytics Dashboard</h3>
+                <p className="text-slate-600 leading-relaxed">Track preview views, client interactions, and payment status in real-time analytics.</p>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* User Roles Section */}
-      <section className="py-20 bg-slate-50">
+      {/* How it Works Section */}
+      <section id="how-it-works" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Built for every role in your workflow
+          <div className="text-center mb-20">
+            <Badge className="mb-6 bg-emerald-100 text-emerald-700 border-emerald-200">
+              Simple Process
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
+              From upload to payment in
+              <span className="block bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">4 simple steps</span>
+            </h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+              PayVidi streamlines your entire client workflow, from initial preview sharing to final file delivery.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center group">
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <FileVideo className="w-10 h-10 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">1</span>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Upload & Share</h3>
+              <p className="text-slate-600">Upload your work and create secure preview links to share with clients instantly.</p>
+            </div>
+
+            <div className="text-center group">
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <MessageSquare className="w-10 h-10 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">2</span>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Review & Feedback</h3>
+              <p className="text-slate-600">Clients review your work and leave precise timeline-based comments and suggestions.</p>
+            </div>
+
+            <div className="text-center group">
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Check className="w-10 h-10 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">3</span>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Approve & Pay</h3>
+              <p className="text-slate-600">Once satisfied, clients approve the work and complete secure payment processing.</p>
+            </div>
+
+            <div className="text-center group">
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Download className="w-10 h-10 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">4</span>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Secure Delivery</h3>
+              <p className="text-slate-600">Final files are delivered via secure, time-limited download links sent by email.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* User Roles Section */}
+      <section className="py-24 bg-gradient-to-b from-slate-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <Badge className="mb-6 bg-slate-100 text-slate-700 border-slate-200">
+              For Everyone
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
+              Built for every role in your
+              <span className="block bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">creative workflow</span>
             </h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Freelancer Dashboard */}
-            <Card className="bg-white shadow-lg overflow-hidden">
+            <Card className="bg-white shadow-xl overflow-hidden border-0">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <Users className="text-white w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">For Freelancers</h3>
+                    <p className="text-indigo-100">Manage projects effortlessly</p>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-indigo-50 rounded-xl">
+                    <div>
+                      <p className="font-semibold text-slate-900">Brand Video Project</p>
+                      <p className="text-sm text-slate-600">Waiting for approval</p>
+                    </div>
+                    <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
+                      Pending
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-emerald-50 rounded-xl">
+                    <div>
+                      <p className="font-semibold text-slate-900">Logo Design</p>
+                      <p className="text-sm text-slate-600">Payment received</p>
+                    </div>
+                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                      Completed
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl">
+                    <div>
+                      <p className="font-semibold text-slate-900">Website Mockup</p>
+                      <p className="text-sm text-slate-600">In review</p>
+                    </div>
+                    <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                      Review
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Client Preview Interface */}
+            <Card className="bg-white shadow-xl overflow-hidden border-0">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-8">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <Eye className="text-white w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">For Clients</h3>
+                    <p className="text-emerald-100">Review and approve work</p>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-8">
+                <div className="bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl aspect-video mb-6 flex items-center justify-center">
+                  <Play className="text-slate-500 w-12 h-12" />
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3 p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg">
+                    <div className="w-7 h-7 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mt-1">
+                      <span className="text-white text-xs font-bold">1</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-700">Great opening sequence!</p>
+                      <span className="text-xs text-slate-500">at 0:15</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                    <div className="w-7 h-7 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mt-1">
+                      <span className="text-white text-xs font-bold">2</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-700">Can we adjust the transition here?</p>
+                      <span className="text-xs text-slate-500">at 1:32</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 pt-6 border-t border-slate-200">
+                  <div className="flex space-x-3">
+                    <Button className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700">
+                      Approve & Pay
+                    </Button>
+                    <Button variant="outline" size="icon" className="border-slate-300">
+                      <MessageSquare className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
               <div className="payvidi-gradient p-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
@@ -274,92 +465,42 @@ export default function Landing() {
               </CardContent>
             </Card>
 
-            {/* Client Preview Interface */}
-            <Card className="bg-white shadow-lg overflow-hidden">
-              <div className="payvidi-accent-gradient p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <Eye className="text-white w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">Client Preview</h3>
-                    <p className="text-emerald-100">Review and approve work</p>
-                  </div>
-                </div>
-              </div>
-              <CardContent className="p-6">
-                <div className="bg-slate-100 rounded-lg aspect-video mb-4 flex items-center justify-center">
-                  <Play className="text-slate-400 w-8 h-8" />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center mt-1">
-                      <span className="text-white text-xs">1</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-slate-600">Great opening sequence!</p>
-                      <span className="text-xs text-slate-400">at 0:15</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-secondary rounded-full flex items-center justify-center mt-1">
-                      <span className="text-white text-xs">2</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-slate-600">Can we adjust the transition here?</p>
-                      <span className="text-xs text-slate-400">at 1:32</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-slate-200">
-                  <div className="flex space-x-2">
-                    <Button className="flex-1 payvidi-accent-gradient text-white">
-                      Approve & Pay
-                    </Button>
-                    <Button variant="outline" size="icon">
-                      <MessageSquare className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Admin Panel */}
-            <Card className="bg-white shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-700 to-slate-900 p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <Settings className="text-white w-5 h-5" />
+            <Card className="bg-white shadow-xl overflow-hidden border-0">
+              <div className="bg-gradient-to-r from-slate-700 to-slate-900 p-8">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <Settings className="text-white w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Admin Panel</h3>
+                    <h3 className="text-2xl font-bold text-white">For Admins</h3>
                     <p className="text-slate-300">Platform management</p>
                   </div>
                 </div>
               </div>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-slate-900">1,247</div>
-                    <div className="text-xs text-slate-600">Total Users</div>
+              <CardContent className="p-8">
+                <div className="grid grid-cols-2 gap-6 mb-8">
+                  <div className="text-center p-4 bg-gradient-to-r from-slate-50 to-indigo-50 rounded-xl">
+                    <div className="text-3xl font-bold text-slate-900 mb-2">1,247</div>
+                    <div className="text-sm text-slate-600 font-medium">Total Users</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-slate-900">$12,450</div>
-                    <div className="text-xs text-slate-600">Monthly Revenue</div>
+                  <div className="text-center p-4 bg-gradient-to-r from-slate-50 to-emerald-50 rounded-xl">
+                    <div className="text-3xl font-bold text-slate-900 mb-2">$12.4K</div>
+                    <div className="text-sm text-slate-600 font-medium">Monthly Revenue</div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Commission Rate</span>
-                    <span className="font-medium">8.5%</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg">
+                    <span className="text-slate-700 font-medium">Commission Rate</span>
+                    <span className="font-bold text-slate-900">8.5%</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Active Freelancers</span>
-                    <span className="font-medium">156</span>
+                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50 to-green-50 rounded-lg">
+                    <span className="text-slate-700 font-medium">Active Freelancers</span>
+                    <span className="font-bold text-slate-900">156</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Pending Approvals</span>
-                    <span className="font-medium text-orange-600">3</span>
+                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50 to-orange-50 rounded-lg">
+                    <span className="text-slate-700 font-medium">Pending Approvals</span>
+                    <Badge className="bg-orange-100 text-orange-700 border-orange-200">3</Badge>
                   </div>
                 </div>
               </CardContent>
@@ -369,42 +510,46 @@ export default function Landing() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-white">
+      <section id="pricing" className="py-24 bg-gradient-to-b from-white to-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Simple, transparent pricing
+          <div className="text-center mb-20">
+            <Badge className="mb-6 bg-indigo-100 text-indigo-700 border-indigo-200">
+              Pricing
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
+              Simple, transparent
+              <span className="block bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">pricing</span>
             </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Start free and scale as you grow. We only succeed when you succeed.
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+              Start free and scale as you grow. We only succeed when you succeed with transparent, usage-based pricing.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Starter Plan */}
-            <Card className="bg-slate-50 border border-slate-200">
+            <Card className="bg-white border border-slate-200/50 shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardContent className="p-8">
                 <div className="text-center mb-8">
-                  <h3 className="text-xl font-semibold text-slate-900 mb-2">Starter</h3>
-                  <div className="text-4xl font-bold text-slate-900 mb-1">Free</div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">Starter</h3>
+                  <div className="text-5xl font-bold text-slate-900 mb-2">Free</div>
                   <p className="text-slate-600">Perfect for getting started</p>
                 </div>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-4 mb-10">
                   <li className="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-500" />
-                    <span className="text-slate-600">Up to 5 projects</span>
+                    <Check className="w-5 h-5 text-emerald-500" />
+                    <span className="text-slate-700">Up to 5 projects</span>
                   </li>
                   <li className="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-500" />
-                    <span className="text-slate-600">1GB storage</span>
+                    <Check className="w-5 h-5 text-emerald-500" />
+                    <span className="text-slate-700">1GB storage</span>
                   </li>
                   <li className="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-500" />
-                    <span className="text-slate-600">Basic preview sharing</span>
+                    <Check className="w-5 h-5 text-emerald-500" />
+                    <span className="text-slate-700">Basic preview sharing</span>
                   </li>
                   <li className="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-500" />
-                    <span className="text-slate-600">PayVidi subdomain</span>
+                    <Check className="w-5 h-5 text-emerald-500" />
+                    <span className="text-slate-700">PayVidi subdomain</span>
                   </li>
                 </ul>
                 <Button className="w-full bg-slate-200 text-slate-700 hover:bg-slate-300">
