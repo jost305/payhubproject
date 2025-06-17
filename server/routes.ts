@@ -113,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Project routes
   app.get("/api/projects", requireAuth, async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await storage.getUser(req.session.userId!);
       if (!user) return res.status(401).json({ message: "User not found" });
 
       let projects;
@@ -345,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(410).json({ message: "Download link expired" });
       }
 
-      if (download.downloadCount >= download.maxDownloads) {
+      if ((download.downloadCount ?? 0) >= (download.maxDownloads ?? 3)) {
         return res.status(429).json({ message: "Download limit exceeded" });
       }
 
@@ -356,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Increment download count
       await storage.updateDownload(download.id, {
-        downloadCount: download.downloadCount + 1,
+        downloadCount: (download.downloadCount ?? 0) + 1,
       });
 
       res.json({ fileUrl: project.finalFileUrl });
