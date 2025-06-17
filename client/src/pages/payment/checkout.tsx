@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,28 +8,36 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Lock, CheckCircle, Mail } from "lucide-react";
+import { Play, Lock, CheckCircle, Mail, CreditCard } from "lucide-react";
+import { createPayment, confirmPayment } from "@/lib/stripe";
 import type { Project } from "@shared/schema";
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-}
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-
 const CheckoutForm = ({ project, clientEmail }: { project: Project; clientEmail: string }) => {
-  const stripe = useStripe();
-  const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
   const [downloadToken, setDownloadToken] = useState("");
+  const [paymentData, setPaymentData] = useState<any>(null);
+
+  const createPaymentMutation = useMutation({
+    mutationFn: async () => {
+      return await createPayment(project.id, clientEmail);
+    },
+    onSuccess: (data) => {
+      setPaymentData(data);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Payment Creation Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const confirmPaymentMutation = useMutation({
-    mutationFn: async (paymentIntentId: string) => {
-      const response = await apiRequest('POST', '/api/payments/confirm', { paymentIntentId });
-      return response.json();
+    mutationFn: async (paymentId: string) => {
+      return await confirmPayment(paymentId);
     },
     onSuccess: (data) => {
       setPaymentSucceeded(true);
@@ -52,27 +58,22 @@ const CheckoutForm = ({ project, clientEmail }: { project: Project; clientEmail:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!stripe || !elements) {
-      return;
-    }
-
     setIsProcessing(true);
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      redirect: 'if_required',
-    });
-
-    if (error) {
+    try {
+      if (!paymentData) {
+        const payment = await createPaymentMutation.mutateAsync();
+        await confirmPaymentMutation.mutateAsync(payment.paymentId);
+      } else {
+        await confirmPaymentMutation.mutateAsync(paymentData.paymentId);
+      }
+    } catch (error) {
       toast({
         title: "Payment Failed",
-        description: error.message,
+        description: "An error occurred during payment processing.",
         variant: "destructive",
       });
-      setIsProcessing(false);
-    } else if (paymentIntent?.status === 'succeeded') {
-      await confirmPaymentMutation.mutateAsync(paymentIntent.id);
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -168,16 +169,24 @@ const CheckoutForm = ({ project, clientEmail }: { project: Project; clientEmail:
 
           <div>
             <Label className="block text-sm font-medium text-slate-900 mb-2">
-              Payment Information
+              Payment Method
             </Label>
-            <PaymentElement />
+            <div className="border border-slate-300 rounded-lg p-4 bg-slate-50">
+              <div className="flex items-center space-x-3">
+                <CreditCard className="text-slate-600" />
+                <div>
+                  <p className="font-medium text-slate-900">Credit Card Payment</p>
+                  <p className="text-sm text-slate-600">Secure payment processing</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <Button 
             type="submit"
             className="w-full gradient-accent text-white" 
             size="lg"
-            disabled={!stripe || isProcessing}
+            disabled={isProcessing}
           >
             {isProcessing ? "Processing..." : `Pay $${(parseFloat(project.price) * 1.03).toFixed(2)}`}
           </Button>
@@ -185,7 +194,7 @@ const CheckoutForm = ({ project, clientEmail }: { project: Project; clientEmail:
           <div className="text-center">
             <p className="text-xs text-slate-500">
               <Lock className="inline h-3 w-3 mr-1" />
-              Secured by Stripe. Your payment information is encrypted.
+              Secure payment processing. Your information is encrypted.
             </p>
           </div>
         </form>
@@ -196,7 +205,6 @@ const CheckoutForm = ({ project, clientEmail }: { project: Project; clientEmail:
 
 export default function CheckoutPage() {
   const [, params] = useRoute("/checkout/:id");
-  const [clientSecret, setClientSecret] = useState("");
   
   // Get client email from URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -206,23 +214,6 @@ export default function CheckoutPage() {
     queryKey: [`/api/projects/${params?.id}?clientEmail=${clientEmail}`],
     enabled: !!params?.id && !!clientEmail,
   });
-
-  useEffect(() => {
-    if (project?.project && params?.id) {
-      // Create PaymentIntent as soon as the page loads
-      apiRequest("POST", "/api/create-payment-intent", { 
-        projectId: parseInt(params.id), 
-        clientEmail 
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setClientSecret(data.clientSecret);
-        })
-        .catch((error) => {
-          console.error("Error creating payment intent:", error);
-        });
-    }
-  }, [project, params?.id, clientEmail]);
 
   if (isLoading) {
     return (
@@ -263,17 +254,6 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!clientSecret) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-slate-600">Preparing payment...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
@@ -290,9 +270,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* Payment Form */}
-        <Elements stripe={stripePromise} options={{ clientSecret }}>
-          <CheckoutForm project={projectData} clientEmail={clientEmail} />
-        </Elements>
+        <CheckoutForm project={projectData} clientEmail={clientEmail} />
       </div>
     </div>
   );

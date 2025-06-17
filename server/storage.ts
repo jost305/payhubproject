@@ -117,6 +117,12 @@ export class MemStorage implements IStorage {
     const project: Project = {
       ...insertProject,
       id,
+      description: insertProject.description || null,
+      clientName: insertProject.clientName || null,
+      status: insertProject.status || "draft",
+      previewUrl: insertProject.previewUrl || null,
+      finalFileUrl: insertProject.finalFileUrl || null,
+      deadline: insertProject.deadline || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -141,6 +147,9 @@ export class MemStorage implements IStorage {
     const comment: Comment = {
       ...insertComment,
       id,
+      authorName: insertComment.authorName || null,
+      timestamp: insertComment.timestamp || null,
+      position: insertComment.position || null,
       createdAt: new Date(),
     };
     this.comments.set(id, comment);
@@ -160,6 +169,7 @@ export class MemStorage implements IStorage {
     const payment: Payment = {
       ...insertPayment,
       id,
+      status: insertPayment.status || "pending",
       createdAt: new Date(),
     };
     this.payments.set(id, payment);
@@ -183,6 +193,8 @@ export class MemStorage implements IStorage {
     const download: Download = {
       ...insertDownload,
       id,
+      downloadCount: insertDownload.downloadCount || 0,
+      maxDownloads: insertDownload.maxDownloads || 3,
       createdAt: new Date(),
     };
     this.downloads.set(id, download);
