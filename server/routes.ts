@@ -4,16 +4,14 @@ import { storage } from "./storage";
 import { insertUserSchema, insertProjectSchema, insertCommentSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import session from "express-session";
-import Stripe from "stripe";
 import crypto from "crypto";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+// Extend session interface
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+  }
 }
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
-});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session middleware
@@ -259,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment routes
-  app.post("/api/create-payment-intent", async (req, res) => {
+  app.post("/api/create-payment", async (req, res) => {
     try {
       const { projectId, clientEmail } = req.body;
       const project = await storage.getProjectByIdAndClient(projectId, clientEmail);
@@ -274,67 +272,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const amount = parseFloat(project.price);
       const commission = amount * 0.05; // 5% commission
+      const paymentId = crypto.randomBytes(16).toString('hex');
       
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: "usd",
-        metadata: {
-          projectId: projectId.toString(),
-          clientEmail,
-        },
-      });
-
       // Store payment record
       await storage.createPayment({
         projectId,
-        stripePaymentIntentId: paymentIntent.id,
+        paymentId: paymentId,
         amount: amount.toString(),
         commission: commission.toString(),
         status: "pending",
         clientEmail,
       });
 
-      res.json({ clientSecret: paymentIntent.client_secret });
+      res.json({ 
+        paymentId,
+        amount,
+        commission,
+        projectTitle: project.title 
+      });
     } catch (error: any) {
-      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+      res.status(500).json({ message: "Error creating payment: " + error.message });
     }
   });
 
   app.post("/api/payments/confirm", async (req, res) => {
     try {
-      const { paymentIntentId } = req.body;
+      const { paymentId } = req.body;
       
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      const payment = await storage.getPaymentByProject(parseInt(paymentIntent.metadata?.projectId || "0"));
+      // Find payment by the generated payment ID
+      const payments = await storage.getAllPayments();
+      const payment = payments.find(p => p.paymentId === paymentId);
       
       if (!payment) {
         return res.status(404).json({ message: "Payment not found" });
       }
 
-      if (paymentIntent.status === "succeeded") {
-        await storage.updatePayment(payment.id, { status: "completed" });
-        await storage.updateProject(payment.projectId, { status: "paid" });
+      // Mark payment as completed
+      await storage.updatePayment(payment.id, { status: "completed" });
+      await storage.updateProject(payment.projectId, { status: "paid" });
 
-        // Create download token
-        const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+      // Create download token
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
-        await storage.createDownload({
-          projectId: payment.projectId,
-          token,
-          clientEmail: payment.clientEmail,
-          downloadCount: 0,
-          maxDownloads: 3,
-          expiresAt,
-        });
+      await storage.createDownload({
+        projectId: payment.projectId,
+        token,
+        clientEmail: payment.clientEmail,
+        downloadCount: 0,
+        maxDownloads: 3,
+        expiresAt,
+      });
 
-        // TODO: Send email with download link
-        res.json({ success: true, downloadToken: token });
-      } else {
-        await storage.updatePayment(payment.id, { status: "failed" });
-        res.status(400).json({ message: "Payment failed" });
-      }
+      res.json({ success: true, downloadToken: token });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

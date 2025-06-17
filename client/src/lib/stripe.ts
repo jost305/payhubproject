@@ -1,13 +1,5 @@
-import { loadStripe } from "@stripe/stripe-js";
-
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error("Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY");
-}
-
-export const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-
-export const createPaymentIntent = async (projectId: number, clientEmail: string) => {
-  const response = await fetch("/api/create-payment-intent", {
+export const createPayment = async (projectId: number, clientEmail: string) => {
+  const response = await fetch("/api/create-payment", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -16,7 +8,23 @@ export const createPaymentIntent = async (projectId: number, clientEmail: string
   });
 
   if (!response.ok) {
-    throw new Error("Failed to create payment intent");
+    throw new Error("Failed to create payment");
+  }
+
+  return response.json();
+};
+
+export const confirmPayment = async (paymentId: string) => {
+  const response = await fetch("/api/payments/confirm", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ paymentId }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to confirm payment");
   }
 
   return response.json();

@@ -9,7 +9,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role").notNull().default("freelancer"), // admin, freelancer, client
   subdomain: text("subdomain").unique(),
-  stripeCustomerId: text("stripe_customer_id"),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -43,7 +43,7 @@ export const comments = pgTable("comments", {
 export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").references(() => projects.id).notNull(),
-  stripePaymentIntentId: text("stripe_payment_intent_id").notNull(),
+  paymentId: text("payment_id").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   commission: decimal("commission", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("pending"), // pending, completed, failed
