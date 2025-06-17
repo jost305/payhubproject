@@ -3,16 +3,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "wouter";
-import { Eye, MessageSquare, Calendar, DollarSign, User, Clock } from "lucide-react";
+import { Eye, MessageSquare, Calendar, DollarSign, User, Clock, CheckCircle, AlertCircle, Sparkles } from "lucide-react";
 import type { Project } from "@shared/schema";
 
 interface ProjectCardProps {
   project: Project;
   showActions?: boolean;
   variant?: "default" | "compact" | "detailed";
+  requestCount?: number;
+  showRequestCount?: boolean;
 }
 
-export function ProjectCard({ project, showActions = true, variant = "default" }: ProjectCardProps) {
+export function ProjectCard({ project, showActions = true, variant = "default", requestCount = 0, showRequestCount = false }: ProjectCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-gray-100 text-gray-800';
@@ -20,6 +22,7 @@ export function ProjectCard({ project, showActions = true, variant = "default" }
       case 'approved': return 'bg-yellow-100 text-yellow-800';
       case 'paid': return 'bg-green-100 text-green-800';
       case 'completed': return 'bg-purple-100 text-purple-800';
+      case 'revision_requested': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -54,6 +57,35 @@ export function ProjectCard({ project, showActions = true, variant = "default" }
     if (!deadline) return false;
     return new Date(deadline) < new Date() && project.status !== 'completed';
   };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'draft': return <Clock className="w-3 h-3" />;
+      case 'preview_shared': return <Eye className="w-3 h-3" />;
+      case 'approved': return <CheckCircle className="w-3 h-3" />;
+      case 'paid': return <DollarSign className="w-3 h-3" />;
+      case 'completed': return <CheckCircle className="w-3 h-3" />;
+      case 'revision_requested': return <AlertCircle className="w-3 h-3" />;
+      default: return <Clock className="w-3 h-3" />;
+    }
+  };
+
+  const getProgress = (status: string) => {
+    switch (status) {
+      case 'draft': return 20;
+      case 'preview_shared': return 40;
+      case 'approved': return 60;
+      case 'paid': return 80;
+      case 'completed': return 100;
+      case 'revision_requested': return 25;
+      default: return 0;
+    }
+  };
+
+    const formatStatus = (status: string) => {
+        return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    };
+
 
   if (variant === "compact") {
     return (
@@ -163,7 +195,15 @@ export function ProjectCard({ project, showActions = true, variant = "default" }
 
   // Default variant
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-lg transition-shadow relative">
+        {showRequestCount && requestCount > 0 && project.status === 'preview_shared' && (
+            <div className="absolute -top-2 -right-2 z-10">
+                <Badge className="bg-red-500 text-white px-2 py-1 rounded-full text-xs animate-pulse">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    {requestCount} view{requestCount !== 1 ? 's' : ''}
+                </Badge>
+            </div>
+        )}
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>

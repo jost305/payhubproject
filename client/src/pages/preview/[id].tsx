@@ -11,7 +11,7 @@ import { PreviewPlayer } from "@/components/project/preview-player";
 import { TimelineComments } from "@/components/project/timeline-comments";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, CreditCard, MessageSquare, Play } from "lucide-react";
+import { CheckCircle, CreditCard, MessageSquare, Play, AlertCircle } from "lucide-react";
 import { Link } from "wouter";
 import type { Project, Comment } from "@shared/schema";
 
@@ -21,10 +21,10 @@ export default function PreviewPage() {
   const queryClient = useQueryClient();
   const [clientEmail, setClientEmail] = useState("");
   const [clientName, setClientName] = useState("");
-  const [newComment, setNewComment] = useState({
-    content: "",
-    timestamp: "",
-  });
+  const [newComment, setNewComment] = useState({ content: "", timestamp: "" });
+  const [showCommentForm, setShowCommentForm] = useState(false);
+  const [showRevisionForm, setShowRevisionForm] = useState(false);
+  const [revisionFeedback, setRevisionFeedback] = useState("");
 
   // Get client email from URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -86,6 +86,25 @@ export default function PreviewPage() {
   const handleApprove = async () => {
     approveProjectMutation.mutate();
   };
+
+  const requestRevisionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/projects/${params?.id}/revisions`, {
+        feedback: revisionFeedback,
+        clientEmail: urlClientEmail
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${params?.id}?clientEmail=${urlClientEmail}`] });
+      setShowRevisionForm(false);
+      setRevisionFeedback("");
+      toast({
+        title: "Revision requested",
+        description: "Your feedback has been sent to the freelancer.",
+      });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -217,46 +236,105 @@ export default function PreviewPage() {
               </Card>
             )}
 
-            {/* Add Comment */}
-            <Card className="bg-slate-800 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white">Add Feedback</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleAddComment} className="space-y-4">
-                  <div>
-                    <Label htmlFor="timestamp" className="text-slate-300">Time (mm:ss) - Optional</Label>
-                    <Input
-                      id="timestamp"
-                      value={newComment.timestamp}
-                      onChange={(e) => setNewComment({ ...newComment, timestamp: e.target.value })}
-                      placeholder="1:30"
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
+            {/* Revision Request Form */}
+            {showRevisionForm && projectData.status === 'preview_shared' && (
+              <Card className="bg-slate-800 border-slate-700 border-orange-500/50">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <AlertCircle className="w-5 h-5 mr-2 text-orange-400" />
+                    Request Revisions
+                  </CardTitle>
+                  <CardDescription className="text-slate-300">
+                    Let the freelancer know what changes you'd like to see
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="revision-feedback" className="text-white">What would you like to change?</Label>
+                      <Textarea
+                        id="revision-feedback"
+                        placeholder="Please describe the specific changes you'd like to see..."
+                        value={revisionFeedback}
+                        onChange={(e) => setRevisionFeedback(e.target.value)}
+                        rows={4}
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={() => requestRevisionMutation.mutate()}
+                        disabled={requestRevisionMutation.isPending || !revisionFeedback.trim()}
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                      >
+                        {requestRevisionMutation.isPending ? "Sending..." : "Request Revisions"}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowRevisionForm(false)}
+                        className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="comment" className="text-slate-300">Your Feedback</Label>
-                    <Textarea
-                      id="comment"
-                      value={newComment.content}
-                      onChange={(e) => setNewComment({ ...newComment, content: e.target.value })}
-                      placeholder="Share your thoughts..."
-                      rows={3}
-                      className="bg-slate-700 border-slate-600 text-white"
-                      required
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full gradient-primary text-white"
-                    disabled={addCommentMutation.isPending}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {addCommentMutation.isPending ? "Adding..." : "Add Comment"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Comment Form */}
+            {showCommentForm && projectData.status === 'preview_shared' && (
+              <Card className="bg-slate-800 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Add Feedback</CardTitle>
+                  <CardDescription className="text-slate-300">
+                    Leave specific feedback about the preview
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleAddComment} className="space-y-4">
+                    <div>
+                      <Label htmlFor="timestamp" className="text-white">Timestamp (optional)</Label>
+                      <Input
+                        id="timestamp"
+                        placeholder="e.g., 1:30 or 00:45"
+                        value={newComment.timestamp}
+                        onChange={(e) => setNewComment({ ...newComment, timestamp: e.target.value })}
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="comment" className="text-white">Your Feedback</Label>
+                      <Textarea
+                        id="comment"
+                        placeholder="Share your thoughts about this preview..."
+                        value={newComment.content}
+                        onChange={(e) => setNewComment({ ...newComment, content: e.target.value })}
+                        rows={3}
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        type="submit" 
+                        disabled={addCommentMutation.isPending || !newComment.content.trim()}
+                        className="payvidi-accent-gradient"
+                      >
+                        {addCommentMutation.isPending ? "Adding..." : "Add Feedback"}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setShowCommentForm(false)}
+                        className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Comments List */}
             <TimelineComments 
@@ -290,18 +368,39 @@ export default function PreviewPage() {
               </CardContent>
             </Card>
 
-            {/* Approve Button */}
-            {projectData.status === 'preview_shared' && (
-              <Button 
-                onClick={handleApprove}
-                className="w-full gradient-accent text-white" 
-                size="lg"
-                disabled={approveProjectMutation.isPending}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                {approveProjectMutation.isPending ? "Approving..." : "Approve & Proceed to Payment"}
-              </Button>
-            )}
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              {projectData.status === 'preview_shared' && (
+                <>
+                  <Button 
+                    onClick={() => approveProjectMutation.mutate()}
+                    disabled={approveProjectMutation.isPending}
+                    className="w-full gradient-accent text-white"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {approveProjectMutation.isPending ? "Approving..." : "Approve & Proceed to Payment"}
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-orange-200 text-orange-700 hover:bg-orange-50"
+                    onClick={() => setShowRevisionForm(!showRevisionForm)}
+                  >
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Request Revisions
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setShowCommentForm(!showCommentForm)}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Add Feedback
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

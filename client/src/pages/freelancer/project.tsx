@@ -240,71 +240,176 @@ export default function FreelancerProject() {
               </Card>
             </div>
 
-            {/* Timeline */}
+            {/* Enhanced Timeline */}
             <Card>
               <CardHeader>
                 <CardTitle>Project Timeline</CardTitle>
                 <CardDescription>Track the progress of your project</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-4 h-4 text-white" />
+                <div className="relative">
+                  <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-slate-200"></div>
+                  <div className="space-y-6">
+                    {/* Project Created */}
+                    <div className="flex items-start space-x-3 relative">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center z-10">
+                        <CheckCircle className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-slate-900">Project Created</p>
+                          <p className="text-xs text-slate-500">{new Date(project.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <p className="text-sm text-slate-600">Initial project setup completed</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">Project Created</p>
-                      <p className="text-sm text-slate-600">{new Date(project.createdAt).toLocaleDateString()}</p>
-                    </div>
+                    
+                    {/* Files Uploaded */}
+                    {files?.length > 0 ? (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center z-10">
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-slate-900">Files Uploaded</p>
+                            <p className="text-xs text-slate-500">Recently</p>
+                          </div>
+                          <p className="text-sm text-slate-600">{files.length} file(s) added to project</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center z-10">
+                          <Upload className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-slate-500">Upload Files</p>
+                          <p className="text-sm text-slate-400">Add preview files to share with client</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Preview Shared */}
+                    {["preview_shared", "approved", "paid", "completed"].includes(project.status) ? (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center z-10">
+                          <Eye className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-slate-900">Preview Shared</p>
+                            <p className="text-xs text-slate-500">Recently</p>
+                          </div>
+                          <p className="text-sm text-slate-600">Client notified and can now review</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center z-10">
+                          <Eye className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-slate-500">Share Preview</p>
+                          <p className="text-sm text-slate-400">Send preview link to client</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Client Feedback */}
+                    {comments?.length > 0 && ["preview_shared", "approved", "paid", "completed"].includes(project.status) && (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center z-10">
+                          <MessageSquare className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-slate-900">Client Feedback</p>
+                            <p className="text-xs text-slate-500">Recently</p>
+                          </div>
+                          <p className="text-sm text-slate-600">{comments.length} comment(s) received</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Preview Approved */}
+                    {["approved", "paid", "completed"].includes(project.status) ? (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center z-10">
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-slate-900">Preview Approved</p>
+                            <p className="text-xs text-slate-500">Recently</p>
+                          </div>
+                          <p className="text-sm text-slate-600">Client approved and ready for payment</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center z-10">
+                          <CheckCircle className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-slate-500">Client Approval</p>
+                          <p className="text-sm text-slate-400">Waiting for client approval</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Payment Received */}
+                    {["paid", "completed"].includes(project.status) ? (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center z-10">
+                          <DollarSign className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-slate-900">Payment Received</p>
+                            <p className="text-xs text-slate-500">Recently</p>
+                          </div>
+                          <p className="text-sm text-slate-600">Payment processed, final files delivered</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center z-10">
+                          <DollarSign className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-slate-500">Payment</p>
+                          <p className="text-sm text-slate-400">Awaiting client payment</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Project Completed */}
+                    {project.status === "completed" ? (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center z-10">
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-slate-900">Project Completed</p>
+                            <p className="text-xs text-slate-500">Recently</p>
+                          </div>
+                          <p className="text-sm text-slate-600">All deliverables completed successfully</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start space-x-3 relative">
+                        <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center z-10">
+                          <CheckCircle className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-slate-500">Project Completion</p>
+                          <p className="text-sm text-slate-400">Final step - mark project as complete</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  
-                  {files?.length > 0 && (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                        <CheckCircle className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Files Uploaded</p>
-                        <p className="text-sm text-slate-600">{files.length} file(s) added</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {project.status === "preview_shared" && (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                        <Eye className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Preview Shared</p>
-                        <p className="text-sm text-slate-600">Client can now review and comment</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {project.status === "approved" && (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                        <CheckCircle className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Preview Approved</p>
-                        <p className="text-sm text-slate-600">Client approved the preview</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {project.status === "paid" && (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                        <DollarSign className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Payment Received</p>
-                        <p className="text-sm text-slate-600">Final files delivered</p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>

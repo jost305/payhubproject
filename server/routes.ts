@@ -195,24 +195,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Special route for client project updates (approval)
+  // Special route for client project updates (approval/decline)
   app.patch("/api/projects/:id/client-update", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { clientEmail, status } = req.body;
+      const { clientEmail, status, feedback } = req.body;
       
       const project = await storage.getProjectByIdAndClient(id, clientEmail);
       if (!project) {
         return res.status(404).json({ message: "Project not found or access denied" });
       }
 
-      // Only allow specific status changes by clients
+      let updatedProject;
+      
+      // Allow specific status changes by clients
       if (status === 'approved' && project.status === 'preview_shared') {
-        const updatedProject = await storage.updateProject(id, { status: 'approved' });
-        res.json({ project: updatedProject });
+        updatedProject = await storage.updateProject(id, { status: 'approved' });
+        
+        // Log approval event
+        await storage.createAnalytics({
+          projectId: id,
+          event: 'approval',
+          clientEmail,
+          metadata: { timestamp: new Date().toISOString() }
+        });
+        
+      } else if (status === 'revision_requested' && project.status === 'preview_shared') {
+        updatedProject = await storage.updateProject(id, { status: 'draft' });
+        
+        // Add feedback comment if provided
+        if (feedback) {
+          await storage.createComment({
+            projectId: id,
+            authorEmail: clientEmail,
+            authorName: project.clientName || 'Client',
+            content: `Revision requested: ${feedback}`
+          });
+        }
+        
+        // Log revision request event
+        await storage.createAnalytics({
+          projectId: id,
+          event: 'revision_requested',
+          clientEmail,
+          metadata: { 
+            feedback,
+            timestamp: new Date().toISOString() 
+          }
+        });
+        
       } else {
-        res.status(400).json({ message: "Invalid status change" });
+        return res.status(400).json({ message: "Invalid status change" });
       }
+
+      res.json({ project: updatedProject });
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
@@ -482,6 +518,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         avgEngagement,
         conversionRate,
       });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Project request counts
+  app.get("/api/projects/request-counts", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user || user.role !== "freelancer") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const projects = await storage.getProjectsByFreelancer(user.id);
+      const requestCounts: Record<number, number> = {};
+
+      for (const project of projects) {
+        if (project.status === "preview_shared") {
+          const analytics = await storage.getAnalyticsByProject(project.id);
+          const viewCount = analytics.filter(a => a.event === 'view').length;
+          requestCounts[project.id] = viewCount || 0;
+        }
+      }
+
+      res.json({ requestCounts });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

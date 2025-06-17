@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -69,7 +68,7 @@ export default function FreelancerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  
+
   const [newProject, setNewProject] = useState({
     title: "",
     description: "",
@@ -108,8 +107,14 @@ export default function FreelancerDashboard() {
     },
   });
 
-  const { data: projects, isLoading } = useQuery({
-    queryKey: ['/api/projects'],
+  const { data: projects, isLoading: projectsLoading } = useQuery({
+    queryKey: ["/api/projects"],
+    enabled: !!user,
+  });
+
+  const { data: requestCounts } = useQuery({
+    queryKey: ["/api/projects/request-counts"],
+    enabled: !!user,
   });
 
   const { data: folders } = useQuery({
@@ -680,60 +685,14 @@ export default function FreelancerDashboard() {
 
               {/* Projects Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProjects.map((project: Project) => (
-                  <Card key={project.id} className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate">{project.title}</h3>
-                          <p className="text-sm text-gray-500 mt-1">{project.clientName || project.clientEmail}</p>
-                        </div>
-                        <Badge className={`${getStatusColor(project.status)} ml-2`}>
-                          {project.status.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-500">Price</span>
-                          <span className="font-semibold text-gray-900">${project.price}</span>
-                        </div>
-                        {project.deadline && (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Deadline</span>
-                            <span className="text-gray-900">{new Date(project.deadline).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center space-x-2 pt-3">
-                          <Button asChild size="sm" className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white">
-                            <Link href={`/project/${project.id}`}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </Link>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedProject(project);
-                              setUploadDialogOpen(true);
-                            }}
-                            className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                          >
-                            <Upload className="h-4 w-4" />
-                          </Button>
-                          {project.status !== 'draft' && (
-                            <Button asChild variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
-                              <Link href={`/preview/${project.id}`}>
-                                <MessageSquare className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                {filteredProjects.map((project) => (
+                  <ProjectCard 
+                    key={project.id} 
+                    project={project}
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    requestCount={requestCounts?.requestCounts?.[project.id] || 0}
+                    showRequestCount={true}
+                  />
                 ))}
               </div>
 
@@ -833,7 +792,7 @@ export default function FreelancerDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card className="bg-white border-gray-200 shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -983,7 +942,7 @@ export default function FreelancerDashboard() {
                           className="bg-white border-gray-300"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="bannerUrl" className="text-gray-900">Banner URL</Label>
                         <Input
@@ -1150,7 +1109,7 @@ export default function FreelancerDashboard() {
 
                     <div className="space-y-4">
                       <h4 className="font-semibold text-gray-900">Portfolio Settings</h4>
-                      
+
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-gray-900">Public Portfolio</p>
@@ -1261,7 +1220,7 @@ export default function FreelancerDashboard() {
 
                     <div className="space-y-4">
                       <h4 className="font-semibold text-gray-900">Quick Links</h4>
-                      
+
                       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center space-x-3">
                           <Globe className="h-5 w-5 text-gray-600" />
@@ -1328,3 +1287,157 @@ export default function FreelancerDashboard() {
     </div>
   );
 }
+
+interface ProjectCardProps {
+  project: Project;
+  className?: string;
+  requestCount?: number;
+  showRequestCount?: boolean;
+}
+
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, className, requestCount = 0, showRequestCount = false }) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'preview_shared': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'approved': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'paid': return 'bg-green-100 text-green-700 border-green-200';
+      case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: "Link copied to clipboard",
+    });
+  };
+
+  const updateProjectStatusMutation = useMutation({
+    mutationFn: async (data: { projectId: number, status: string }) => {
+      const response = await apiRequest('PATCH', `/api/projects/${data.projectId}`, { status: data.status });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      toast({
+        title: "Success",
+        description: "Project status updated successfully",
+      });
+    },
+  });
+
+  const handleDeleteProject = async (projectId: number) => {
+    if (window.confirm("Are you sure you want to delete this project?")) {
+      try {
+        await apiRequest('DELETE', `/api/projects/${projectId}`);
+        queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+        toast({
+          title: "Success",
+          description: "Project deleted successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete project",
+        });
+      }
+    }
+  };
+
+  return (
+    <Card key={project.id} className={`${className || ''} bg-white border-gray-200 shadow-sm`}>
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 truncate">{project.title}</h3>
+            <p className="text-sm text-gray-500 mt-1">{project.clientName || project.clientEmail}</p>
+          </div>
+          <div className="relative">
+            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              <MoreHorizontal className="h-5 w-5" />
+            </Button>
+            {isMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-md z-10">
+                <Button variant="ghost" className="w-full justify-start hover:bg-gray-50" asChild>
+                  <Link href={`/project/${project.id}`}>
+                    <div className="py-2 px-4 flex items-center space-x-2">
+                      <Eye className="h-4 w-4 text-gray-600" />
+                      <span>View Project</span>
+                    </div>
+                  </Link>
+                </Button>
+                {project.status !== 'draft' && (
+                  <>
+                    <Button variant="ghost" className="w-full justify-start hover:bg-gray-50" asChild>
+                      <Link href={`/preview/${project.id}`}>
+                        <div className="py-2 px-4 flex items-center space-x-2">
+                          <MessageSquare className="h-4 w-4 text-gray-600" />
+                          <span>View Client Preview</span>
+                        </div>
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start hover:bg-gray-50"
+                      onClick={() => copyToClipboard(`${window.location.origin}/preview/${project.id}`)}
+                    >
+                      <div className="py-2 px-4 flex items-center space-x-2">
+                        <Copy className="h-4 w-4 text-gray-600" />
+                        <span>Copy Preview Link</span>
+                      </div>
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start hover:bg-gray-50 text-red-600"
+                  onClick={() => handleDeleteProject(project.id)}
+                >
+                  <div className="py-2 px-4 flex items-center space-x-2">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <span>Delete Project</span>
+                  </div>
+                </Button>
+              </div>
+            )}
+          </div>
+          {showRequestCount && requestCount > 0 && (
+            <Badge className="ml-2 bg-blue-500 text-white">{requestCount}</Badge>
+          )}
+          <Badge className={`${getStatusColor(project.status)} ml-2`}>
+            {project.status.replace('_', ' ')}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-500">Price</span>
+            <span className="font-semibold text-gray-900">${project.price}</span>
+          </div>
+          {project.deadline && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">Deadline</span>
+              <span className="text-gray-900">{new Date(project.deadline).toLocaleDateString()}</span>
+            </div>
+          )}
+          <div className="flex items-center space-x-2 pt-3">
+            <Button asChild size="sm" className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Link href={`/project/${project.id}`}>
+                <Eye className="h-4 w-4 mr-2" />
+                View
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
